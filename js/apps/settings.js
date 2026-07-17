@@ -157,3 +157,4 @@ const SettingsApp = (() => {
 
   return { open, init, applyPrefs, loadPrefs, ACCENTS, WALLPAPERS };
 })();
+ 
