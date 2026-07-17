@@ -350,6 +350,9 @@ html.theme-light .win.focused .win-title-icon{color:var(--accent-2);}
 }
 .cm-item svg{width:15px;height:15px;flex:0 0 auto;color:var(--text-dim);}
 .cm-item:hover{background:var(--glass-strong);}
+.cm-item.cm-danger{color:var(--aurora-pink);}
+.cm-item.cm-danger svg{color:var(--aurora-pink);}
+.cm-item.cm-danger:hover{background:rgba(244,114,182,.14);}
 .cm-sep{height:1px;background:var(--glass-border);margin:4px 2px;}
 
 /* ============ generic app UI helpers ============ */
@@ -363,7 +366,8 @@ html.theme-light .win.focused .win-title-icon{color:var(--accent-2);}
   font-size:12.5px;cursor:pointer;color:var(--panel-text);display:flex;align-items:center;gap:5px;
 }
 .app-btn svg{width:14px;height:14px;flex:0 0 auto;}
-.app-btn:hover{background:#f2f2f8;}
+.app-btn:hover{background:var(--panel-surface-hover);}
+.app-btn:disabled{opacity:.4;cursor:default;pointer-events:none;}
 .app-btn.primary{background:var(--grad);color:#0b0c1c;border:none;font-weight:600;}
 .app-input{
   border:1px solid var(--panel-border);background:var(--panel-input-bg);color:var(--panel-text);border-radius:7px;padding:6px 10px;font-size:12.5px;outline:none;
