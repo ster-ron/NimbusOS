@@ -34,6 +34,7 @@ const FileExplorerApp = (() => {
         <input class="app-input" data-act="path" style="flex:1" value="${path}">
         <button class="app-btn" data-act="new-folder">${ICONS.add} New folder</button>
         <button class="app-btn" data-act="new-file">${ICONS.add} New file</button>
+        <button class="app-btn" data-act="delete" disabled>${ICONS.trash} Delete</button>
       </div>
       <div class="fe-body">
         <div class="fe-sidebar">${QUICK.map(q => `<div class="fe-sidebar-item" data-path="${q.path}"><span>${q.icon}</span><span>${q.label}</span></div>`).join("")}</div>
@@ -49,8 +50,40 @@ const FileExplorerApp = (() => {
       content: root
     });
 
+    root.tabIndex = 0;
+    root.style.outline = "none";
+
     const history = [path];
     let histIdx = 0;
+    const deleteBtn = root.querySelector('[data-act="delete"]');
+
+    function selectedPath() {
+      if (!selected) return null;
+      return (path === "/" ? "" : path) + "/" + selected;
+    }
+
+    function setSelection(name) {
+      selected = name;
+      root.querySelectorAll(".fe-item").forEach(i => i.classList.toggle("selected", i.dataset.name === name));
+      deleteBtn.disabled = !name;
+    }
+
+    function deleteNode(nodePath, nodeName) {
+      if (!confirm(`Delete "${nodeName}"? This can't be undone.`)) return;
+      if (FS.remove(nodePath)) {
+        if (selected === nodeName) setSelection(null);
+        render();
+      } else {
+        alert(`Couldn't delete "${nodeName}".`);
+      }
+    }
+
+    function renameNode(nodePath, nodeName) {
+      const newName = prompt("Rename to:", nodeName);
+      if (!newName || newName === nodeName) return;
+      if (!FS.rename(nodePath, newName)) alert(`Couldn't rename "${nodeName}".`);
+      render();
+    }
 
     function render() {
       root.querySelector('[data-act="path"]').value = path;
@@ -60,23 +93,36 @@ const FileExplorerApp = (() => {
       const grid = root.querySelector(".fe-grid");
       const entries = FS.readDir(path);
       grid.innerHTML = "";
+      deleteBtn.disabled = !selected;
       if (!entries || entries.length === 0) {
         grid.innerHTML = `<div class="fe-empty">This folder is empty</div>`;
         return;
       }
       entries.forEach(node => {
+        const nodePath = (path === "/" ? "" : path) + "/" + node.name;
         const item = document.createElement("div");
-        item.className = "fe-item";
+        item.className = "fe-item" + (selected === node.name ? " selected" : "");
+        item.dataset.name = node.name;
         item.innerHTML = `<span class="fi-emoji">${iconFor(node)}</span><span class="fi-label">${node.name}</span>`;
         item.addEventListener("click", (e) => {
-          root.querySelectorAll(".fe-item").forEach(i => i.classList.remove("selected"));
-          item.classList.add("selected");
-          selected = node.name;
+          e.stopPropagation();
+          setSelection(node.name);
+          root.focus();
         });
         item.addEventListener("dblclick", () => {
-          const newPath = (path === "/" ? "" : path) + "/" + node.name;
-          if (node.type === "dir") { navigate(newPath); }
-          else { CodeEditorApp.open(newPath); }
+          if (node.type === "dir") { navigate(nodePath); }
+          else { CodeEditorApp.open(nodePath); }
+        });
+        item.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setSelection(node.name);
+          ContextMenu.show(e.clientX, e.clientY, [
+            { label: "Open", icon: ICONS.file, action: () => (node.type === "dir" ? navigate(nodePath) : CodeEditorApp.open(nodePath)) },
+            { label: "Rename", icon: ICONS.rename, action: () => renameNode(nodePath, node.name) },
+            "-",
+            { label: "Delete", icon: ICONS.trash, danger: true, action: () => deleteNode(nodePath, node.name) },
+          ]);
         });
         grid.appendChild(item);
       });
@@ -110,8 +156,31 @@ const FileExplorerApp = (() => {
       const name = prompt("File name:", "script.js");
       if (name) { FS.writeFile((path === "/" ? "" : path) + "/" + name, ""); render(); CodeEditorApp.open((path === "/" ? "" : path) + "/" + name); }
     });
+    deleteBtn.addEventListener("click", () => {
+      if (!selected) return;
+      deleteNode(selectedPath(), selected);
+    });
     root.querySelectorAll(".fe-sidebar-item").forEach(el => {
       el.addEventListener("click", () => navigate(el.dataset.path));
+    });
+    root.querySelector(".fe-main").addEventListener("click", (e) => {
+      if (e.target.closest(".fe-item")) return;
+      setSelection(null);
+      root.focus();
+    });
+    root.querySelector(".fe-main").addEventListener("contextmenu", (e) => {
+      if (e.target.closest(".fe-item")) return;
+      e.preventDefault();
+      ContextMenu.show(e.clientX, e.clientY, [
+        { label: "New Folder", icon: ICONS.folder, action: () => { const n = prompt("Folder name:", "New folder"); if (n) { FS.mkdir((path === "/" ? "" : path) + "/" + n); render(); } } },
+        { label: "New File", icon: ICONS.add, action: () => { const n = prompt("File name:", "script.js"); if (n) { FS.writeFile((path === "/" ? "" : path) + "/" + n, ""); render(); CodeEditorApp.open((path === "/" ? "" : path) + "/" + n); } } },
+      ]);
+    });
+    root.addEventListener("keydown", (e) => {
+      if ((e.key === "Delete" || e.key === "Backspace") && selected && document.activeElement !== root.querySelector('[data-act="path"]')) {
+        e.preventDefault();
+        deleteNode(selectedPath(), selected);
+      }
     });
 
     render();
