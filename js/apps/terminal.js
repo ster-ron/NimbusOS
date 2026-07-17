@@ -20,9 +20,6 @@ const TerminalApp = (() => {
     root.className = "term-root";
     root.tabIndex = 0;
 
-    const output = document.createElement("div");
-    root.appendChild(output);
-
     const promptLine = document.createElement("div");
     promptLine.className = "term-prompt-line";
     promptLine.innerHTML = `<span class="term-prompt" data-act="prompt">nimbus:${cwd}$</span><input class="term-input" autocomplete="off" spellcheck="false">`;
@@ -43,14 +40,19 @@ const TerminalApp = (() => {
       const line = document.createElement("div");
       line.className = "term-line" + (cls ? " " + cls : "");
       line.textContent = text;
-      output.insertBefore(line, promptLine);
+      root.insertBefore(line, promptLine);
     }
     function printHTML(html) {
       if (captureBuffer) { captureBuffer.push(html.replace(/<[^>]+>/g, "")); return; }
       const line = document.createElement("div");
       line.className = "term-line";
       line.innerHTML = html;
-      output.insertBefore(line, promptLine);
+      root.insertBefore(line, promptLine);
+    }
+    function clearOutput() {
+      while (root.firstChild && root.firstChild !== promptLine) {
+        root.removeChild(root.firstChild);
+      }
     }
 
     function banner() {
@@ -268,7 +270,7 @@ const TerminalApp = (() => {
         if (history.length === 0) return println("(no history yet)", "term-dim");
         history.forEach((h, i) => println(`  ${i + 1}  ${h}`, "term-dim"));
       },
-      clear() { output.innerHTML = ""; },
+      clear() { clearOutput(); },
       whoami() { println("nimbus-user"); },
       date() { println(new Date().toString()); },
       neofetch() {
@@ -382,7 +384,7 @@ const TerminalApp = (() => {
         }
       } else if (e.ctrlKey && e.key.toLowerCase() === "l") {
         e.preventDefault();
-        output.innerHTML = "";
+        clearOutput();
       } else if (e.ctrlKey && e.key.toLowerCase() === "c") {
         e.preventDefault();
         println(`nimbus:${cwd}$ ${input.value}^C`, "term-dim");
