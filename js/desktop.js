@@ -114,33 +114,14 @@
           document.querySelectorAll(".dicon.selected").forEach(i => i.classList.remove("selected"));
         }
       }
-      hideContextMenu();
     });
   }
 
   /* ---------------- context menu ---------------- */
-  function showContextMenu(x, y, items) {
-    const cm = document.getElementById("context-menu");
-    cm.innerHTML = items.map((it, i) =>
-      it === "-" ? `<div class="cm-sep"></div>` : `<div class="cm-item" data-i="${i}">${it.icon || ""} ${it.label}</div>`
-    ).join("");
-    cm.style.left = Math.min(x, window.innerWidth - 220) + "px";
-    cm.style.top = Math.min(y, window.innerHeight - items.length * 34 - 60) + "px";
-    cm.classList.add("open");
-    cm.querySelectorAll(".cm-item").forEach(el => {
-      el.addEventListener("click", () => {
-        const it = items[+el.dataset.i];
-        if (it && it.action) it.action();
-        hideContextMenu();
-      });
-    });
-  }
-  function hideContextMenu() { document.getElementById("context-menu").classList.remove("open"); }
-
   function wireContextMenu() {
     document.getElementById("desktop").addEventListener("contextmenu", (e) => {
       e.preventDefault();
-      showContextMenu(e.clientX, e.clientY, [
+      ContextMenu.show(e.clientX, e.clientY, [
         { label: "New Folder", icon: ICONS.folder, action: () => { const n = prompt("Folder name:", "New folder"); if (n) FS.mkdir("/Desktop/" + n); } },
         { label: "New File", icon: ICONS.code, action: () => { const n = prompt("File name:", "script.js"); if (n) { FS.writeFile("/Desktop/" + n, ""); CodeEditorApp.open("/Desktop/" + n); } } },
         "-",
@@ -148,7 +129,6 @@
         { label: "Personalize…", icon: ICONS.settings, action: () => SettingsApp.open() },
       ]);
     });
-    window.addEventListener("resize", hideContextMenu);
   }
 
   /* ---------------- boot ---------------- */
