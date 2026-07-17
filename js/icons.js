@@ -57,5 +57,9 @@ const ICONS = (() => {
     moon: svg(`<path d="M20 14.3A8.4 8.4 0 0 1 9.7 4a8.4 8.4 0 1 0 10.3 10.3z"/>`),
 
     wave: svg(`<path d="M3.5 13v-2"/><path d="M6.7 15.5v-7"/><path d="M9.9 17.5v-11"/><path d="M13.1 15.5v-7"/><path d="M16.3 17.5v-11"/><path d="M19.5 13v-2"/>`),
+
+    trash: svg(`<path d="M4.5 7h15"/><path d="M9.5 7V4.8a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V7"/><path d="M6.5 7l.9 12.2a1 1 0 0 0 1 .9h7.2a1 1 0 0 0 1-.9L17.5 7"/><path d="M10.2 11v6"/><path d="M13.8 11v6"/>`),
+
+    rename: svg(`<path d="M5 16v3h3l9.5-9.5-3-3z"/><path d="M14.5 6.5l3 3"/><path d="M4 20h16"/>`),
   };
 })();
