@@ -154,6 +154,15 @@ const WM = (() => {
     return Object.values(windows).find(w => w.meta.appId === appId);
   }
 
+  function findByAppIdPrefix(prefix) {
+    return Object.values(windows).find(w => w.meta.appId && w.meta.appId.startsWith(prefix));
+  }
+
+  function setAppId(id, newAppId) {
+    const w = windows[id];
+    if (w) { w.meta.appId = newAppId; w.el.dataset.appId = newAppId; }
+  }
+
   function makeDraggable(el, id) {
     const handle = el.querySelector(".win-titlebar");
     let sx, sy, ox, oy, dragging = false;
@@ -230,12 +239,24 @@ const WM = (() => {
     });
   }
 
+  function minimizeAll() {
+    const ids = [];
+    Object.keys(windows).forEach(id => {
+      if (!windows[id].meta.minimized) { minimizeWindow(id); ids.push(id); }
+    });
+    return ids;
+  }
+
+  function closeFocused() {
+    if (activeId) closeWindow(activeId);
+  }
+
   function closeAll() {
     Object.keys(windows).forEach(closeWindow);
   }
 
   return {
     createWindow, closeWindow, focusWindow, minimizeWindow, toggleMaximize,
-    setTitle, getBody, findByAppId, closeAll
+    setTitle, getBody, findByAppId, findByAppIdPrefix, setAppId, minimizeAll, closeFocused, closeAll
   };
 })();
