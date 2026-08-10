@@ -43,8 +43,8 @@ const FS = (() => {
               content: "NimbusOS — a webOS built for coders 👋\n\n" +
                 "Try these things:\n" +
                 "  • Open Terminal and run: cd /Projects && run hello.js\n" +
-                "  • Open Code Editor on /Projects/demo.html and hit Run to preview it\n" +
-                "  • Code Editor has real syntax highlighting and a live JS console / HTML preview\n" +
+                "  • Open Codex on /Projects/demo.html and hit Run to preview it\n" +
+                "  • Codex has real syntax highlighting and a live JS console / HTML preview\n" +
                 "  • Everything runs for real — no simulation — right in your browser\n" +
                 "  • The filesystem persists in localStorage, so your files survive a refresh\n"
             }
@@ -184,4 +184,3 @@ const FS = (() => {
 
   return { exists, isDir, readDir, readFile, writeFile, mkdir, remove, rename, move, normalize, reset, resolveNode };
 })();
- 
