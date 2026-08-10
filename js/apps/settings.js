@@ -98,11 +98,17 @@ const SettingsApp = (() => {
           <div class="toggle ${prefs.reduceMotion ? "on" : ""}" data-act="motion"><div class="knob"></div></div>
         </div>
         <div class="set-row">
-          <div><div class="set-row-label">Reset filesystem</div><div class="set-row-sub">Restore Documents, Pictures, Downloads to defaults</div></div>
+          <div><div class="set-row-label">Reset filesystem</div><div class="set-row-sub">Restore Desktop, Projects, Documents, Downloads to defaults</div></div>
           <button class="app-btn" data-act="reset-fs">Reset</button>
         </div>
         <div class="set-row">
           <div><div class="set-row-label">Storage used</div><div class="set-row-sub" data-act="storage-size">calculating…</div></div>
+        </div>
+        <div class="set-row" style="align-items:flex-start;flex-direction:column;gap:10px;border-bottom:none;">
+          <div class="set-row-label">Keyboard shortcuts</div>
+          <div class="shortcut-list">
+            ${(window.NIMBUS_SHORTCUTS || []).map(s => `<div class="shortcut-row"><span>${s.label}</span><span class="kbd">${s.shortcut}</span></div>`).join("")}
+          </div>
         </div>
       `;
       try {
@@ -157,4 +163,3 @@ const SettingsApp = (() => {
 
   return { open, init, applyPrefs, loadPrefs, ACCENTS, WALLPAPERS };
 })();
- 

@@ -111,14 +111,14 @@ const FileExplorerApp = (() => {
         });
         item.addEventListener("dblclick", () => {
           if (node.type === "dir") { navigate(nodePath); }
-          else { CodeEditorApp.open(nodePath); }
+          else { CodexApp.open(nodePath); }
         });
         item.addEventListener("contextmenu", (e) => {
           e.preventDefault();
           e.stopPropagation();
           setSelection(node.name);
           ContextMenu.show(e.clientX, e.clientY, [
-            { label: "Open", icon: ICONS.file, action: () => (node.type === "dir" ? navigate(nodePath) : CodeEditorApp.open(nodePath)) },
+            { label: "Open", icon: ICONS.file, action: () => (node.type === "dir" ? navigate(nodePath) : CodexApp.open(nodePath)) },
             { label: "Rename", icon: ICONS.rename, action: () => renameNode(nodePath, node.name) },
             "-",
             { label: "Delete", icon: ICONS.trash, danger: true, action: () => deleteNode(nodePath, node.name) },
@@ -154,7 +154,7 @@ const FileExplorerApp = (() => {
     });
     root.querySelector('[data-act="new-file"]').addEventListener("click", () => {
       const name = prompt("File name:", "script.js");
-      if (name) { FS.writeFile((path === "/" ? "" : path) + "/" + name, ""); render(); CodeEditorApp.open((path === "/" ? "" : path) + "/" + name); }
+      if (name) { FS.writeFile((path === "/" ? "" : path) + "/" + name, ""); render(); CodexApp.open((path === "/" ? "" : path) + "/" + name); }
     });
     deleteBtn.addEventListener("click", () => {
       if (!selected) return;
@@ -173,7 +173,7 @@ const FileExplorerApp = (() => {
       e.preventDefault();
       ContextMenu.show(e.clientX, e.clientY, [
         { label: "New Folder", icon: ICONS.folder, action: () => { const n = prompt("Folder name:", "New folder"); if (n) { FS.mkdir((path === "/" ? "" : path) + "/" + n); render(); } } },
-        { label: "New File", icon: ICONS.add, action: () => { const n = prompt("File name:", "script.js"); if (n) { FS.writeFile((path === "/" ? "" : path) + "/" + n, ""); render(); CodeEditorApp.open((path === "/" ? "" : path) + "/" + n); } } },
+        { label: "New File", icon: ICONS.add, action: () => { const n = prompt("File name:", "script.js"); if (n) { FS.writeFile((path === "/" ? "" : path) + "/" + n, ""); render(); CodexApp.open((path === "/" ? "" : path) + "/" + n); } } },
       ]);
     });
     root.addEventListener("keydown", (e) => {

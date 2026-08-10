@@ -90,7 +90,7 @@ const TerminalApp = (() => {
           ["sort [file]", "sort lines alphabetically"],
           ["uniq [file]", "collapse repeated consecutive lines"],
           ["wc [file]", "count lines, words, characters"],
-          ["open <file>", "open file in Code Editor"],
+          ["open <file>", "open file in Codex"],
           ["run <file.js>", "execute a JS file, console output printed here"],
           ["explorer [path]", "open File Explorer"],
           ["history", "show recent commands"],
@@ -239,7 +239,7 @@ const TerminalApp = (() => {
         if (!args[0]) return println("usage: open <file>", "term-err");
         const p = resolvePath(args[0]);
         if (!FS.exists(p)) return println(`open: no such file: ${args[0]}`, "term-err");
-        CodeEditorApp.open(p);
+        CodexApp.open(p);
       },
       run(args) {
         if (!args[0]) return println("usage: run <file.js>", "term-err");
@@ -407,5 +407,11 @@ const TerminalApp = (() => {
     return winId;
   }
 
-  return { open };
+  function focusOrOpen() {
+    const existing = WM.findByAppIdPrefix("terminal:");
+    if (existing) { WM.focusWindow(existing.meta.id); return existing.meta.id; }
+    return open();
+  }
+
+  return { open, focusOrOpen };
 })();
