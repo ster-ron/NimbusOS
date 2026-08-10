@@ -1,220 +1,189 @@
-/* ========================= Code Editor App =========================
-   Syntax-highlighted editor (CodeMirror, loaded from CDN) with a Run
-   button: .js files execute in a sandbox with console output captured
-   below the editor; .html files render live in a preview pane.
-   Falls back to a plain textarea if CodeMirror didn't load (e.g. offline).
-======================================================================= */
-const CodeEditorApp = (() => {
+/* ========================= File Explorer App ========================= */
+const FileExplorerApp = (() => {
 
-  const MODE_BY_EXT = {
-    js: "javascript", json: "application/json", jsx: "javascript",
-    html: "htmlmixed", htm: "htmlmixed", xml: "xml", svg: "xml",
-    css: "css", md: "markdown", markdown: "markdown",
-    py: "python", sh: "shell", txt: null,
-  };
+  const QUICK = [
+    { label: "Desktop", path: "/Desktop", icon: ICONS.window },
+    { label: "Projects", path: "/Projects", icon: ICONS.code },
+    { label: "Documents", path: "/Documents", icon: ICONS.folder },
+    { label: "Downloads", path: "/Downloads", icon: ICONS.folder },
+    { label: "This PC", path: "/", icon: ICONS.explorer },
+  ];
 
-  function extOf(path) { return (path.split(".").pop() || "").toLowerCase(); }
-  function isRunnable(path) { const e = extOf(path); return e === "js" || e === "html" || e === "htm"; }
+  function iconFor(node) {
+    if (node.type === "dir") return ICONS.folder;
+    const ext = (node.name.split(".").pop() || "").toLowerCase();
+    if (["txt", "md"].includes(ext)) return ICONS.editor;
+    if (["png", "jpg", "jpeg", "gif", "svg"].includes(ext)) return ICONS.image;
+    if (["js", "json", "css", "html"].includes(ext)) return ICONS.code;
+    return ICONS.file;
+  }
 
-  function open(path) {
-    if (path) {
-      const existing = WM.findByAppId("codeEditor:" + path);
-      if (existing) { WM.focusWindow(existing.meta.id); return existing.meta.id; }
-    }
+  function open(startPath) {
+    let existing = WM.findByAppId("fileExplorer:" + (startPath || "/"));
+    if (existing) { WM.focusWindow(existing.meta.id); return existing.meta.id; }
 
-    let currentPath = path || null;
-    let dirty = false;
-    let panelMode = null; // null | "console" | "preview"
+    let path = startPath || "/";
+    let selected = null;
 
     const root = document.createElement("div");
-    root.className = "app-root ce-root";
+    root.className = "app-root fe-body-wrap";
     root.innerHTML = `
       <div class="app-toolbar">
-        <button class="app-btn primary" data-act="save">${ICONS.save} Save</button>
-        <button class="app-btn" data-act="save-as">Save As…</button>
-        <button class="app-btn" data-act="run" style="display:none;">${ICONS.play} Run</button>
-        <span style="flex:1"></span>
-        <span class="ce-mode-label" data-act="mode-label"></span>
-        <span style="font-size:11.5px;color:var(--panel-text-dim);" data-act="path-label"></span>
+        <button class="app-btn" data-act="back">←</button>
+        <button class="app-btn" data-act="up">↑</button>
+        <input class="app-input" data-act="path" style="flex:1" value="${path}">
+        <button class="app-btn" data-act="new-folder">${ICONS.add} New folder</button>
+        <button class="app-btn" data-act="new-file">${ICONS.add} New file</button>
+        <button class="app-btn" data-act="delete" disabled>${ICONS.trash} Delete</button>
       </div>
-      <div class="ce-editor-wrap"></div>
-      <div class="ce-panel" data-act="panel" style="display:none;">
-        <div class="ce-panel-head">
-          <span data-act="panel-title">Console</span>
-          <button class="app-btn" data-act="panel-close">Close</button>
-        </div>
-        <div class="ce-panel-body" data-act="panel-body"></div>
+      <div class="fe-body">
+        <div class="fe-sidebar">${QUICK.map(q => `<div class="fe-sidebar-item" data-path="${q.path}"><span>${q.icon}</span><span>${q.label}</span></div>`).join("")}</div>
+        <div class="fe-main"><div class="fe-grid"></div></div>
       </div>
-      <div class="te-status" data-act="status">Ready</div>
     `;
 
-    const editorWrap = root.querySelector(".ce-editor-wrap");
-    const runBtn = root.querySelector('[data-act="run"]');
-    const modeLabel = root.querySelector('[data-act="mode-label"]');
-    const pathLabel = root.querySelector('[data-act="path-label"]');
-    const status = root.querySelector('[data-act="status"]');
-    const panel = root.querySelector('[data-act="panel"]');
-    const panelTitle = root.querySelector('[data-act="panel-title"]');
-    const panelBody = root.querySelector('[data-act="panel-body"]');
-
-    const initialContent = currentPath ? (FS.readFile(currentPath) || "") : "";
-
-    // ---- build editor: CodeMirror if available, otherwise a plain textarea ----
-    let cm = null, textarea = null, resizeObserver = null;
-    const useCM = typeof window.CodeMirror !== "undefined";
-
-    if (useCM) {
-      cm = CodeMirror(editorWrap, {
-        value: initialContent,
-        lineNumbers: true,
-        theme: "nimbus",
-        matchBrackets: true,
-        autoCloseBrackets: true,
-        styleActiveLine: true,
-        tabSize: 2,
-        indentUnit: 2,
-        mode: currentPath ? (MODE_BY_EXT[extOf(currentPath)] || null) : null,
-        viewportMargin: Infinity,
-      });
-      cm.on("change", () => { dirty = true; onContentChanged(); });
-      resizeObserver = new ResizeObserver(() => cm.refresh());
-      resizeObserver.observe(root);
-    } else {
-      textarea = document.createElement("textarea");
-      textarea.className = "te-textarea";
-      textarea.spellcheck = false;
-      textarea.placeholder = "Start typing…";
-      textarea.value = initialContent;
-      textarea.style.cssText = "flex:1;background:transparent;";
-      editorWrap.style.cssText = "display:flex;flex:1;";
-      editorWrap.appendChild(textarea);
-      textarea.addEventListener("input", () => { dirty = true; onContentChanged(); });
-    }
-
-    function getValue() { return cm ? cm.getValue() : textarea.value; }
-    function setMode(path) {
-      const mode = path ? MODE_BY_EXT[extOf(path)] : null;
-      if (cm) cm.setOption("mode", mode || null);
-      modeLabel.textContent = path ? (extOf(path).toUpperCase() || "TEXT") : "";
-      runBtn.style.display = (path && isRunnable(path)) ? "flex" : "none";
-    }
-
     const winId = WM.createWindow({
-      appId: "codeEditor:" + (path || ("untitled-" + Date.now())),
-      title: currentPath ? currentPath.split("/").pop() : "Untitled — Code Editor",
-      icon: ICONS.code,
-      width: 660, height: 500,
-      content: root,
-      onFocus: () => { if (cm) setTimeout(() => cm.focus(), 30); },
-      onClose: () => { if (resizeObserver) resizeObserver.disconnect(); }
+      appId: "fileExplorer:" + (startPath || "/"),
+      title: "File Explorer",
+      icon: ICONS.explorer,
+      width: 680, height: 460,
+      content: root
     });
 
-    function refreshTitle() {
-      const name = currentPath ? currentPath.split("/").pop() : "Untitled";
-      WM.setTitle(winId, (dirty ? "• " : "") + name + " — Code Editor");
-      pathLabel.textContent = currentPath || "not saved";
-    }
-    function onContentChanged() {
-      status.textContent = `${getValue().length} characters`;
-      refreshTitle();
+    root.tabIndex = 0;
+    root.style.outline = "none";
+
+    const history = [path];
+    let histIdx = 0;
+    const deleteBtn = root.querySelector('[data-act="delete"]');
+
+    function selectedPath() {
+      if (!selected) return null;
+      return (path === "/" ? "" : path) + "/" + selected;
     }
 
-    setMode(currentPath);
-    refreshTitle();
-    onContentChanged();
+    function setSelection(name) {
+      selected = name;
+      root.querySelectorAll(".fe-item").forEach(i => i.classList.toggle("selected", i.dataset.name === name));
+      deleteBtn.disabled = !name;
+    }
 
-    function saveAs() {
-      const suggestion = currentPath || "/Projects/untitled.js";
-      const p = prompt("Save as (full path):", suggestion);
-      if (!p) return;
-      if (FS.writeFile(p, getValue())) {
-        currentPath = p; dirty = false; refreshTitle(); setMode(currentPath);
-        status.textContent = "Saved to " + p;
+    function deleteNode(nodePath, nodeName) {
+      if (!confirm(`Delete "${nodeName}"? This can't be undone.`)) return;
+      if (FS.remove(nodePath)) {
+        if (selected === nodeName) setSelection(null);
+        render();
       } else {
-        status.textContent = "Could not save — check the path";
+        alert(`Couldn't delete "${nodeName}".`);
       }
     }
 
-    root.querySelector('[data-act="save"]').addEventListener("click", () => {
-      if (!currentPath) return saveAs();
-      FS.writeFile(currentPath, getValue());
-      dirty = false; refreshTitle();
-      status.textContent = "Saved";
-    });
-    root.querySelector('[data-act="save-as"]').addEventListener("click", saveAs);
-
-    /* ---------------- Run ---------------- */
-    function openPanel(mode) {
-      panelMode = mode;
-      panel.style.display = "flex";
-      panelTitle.textContent = mode === "console" ? "Console" : "Preview";
-      if (cm) setTimeout(() => cm.refresh(), 0);
+    function renameNode(nodePath, nodeName) {
+      const newName = prompt("Rename to:", nodeName);
+      if (!newName || newName === nodeName) return;
+      if (!FS.rename(nodePath, newName)) alert(`Couldn't rename "${nodeName}".`);
+      render();
     }
-    function closePanel() {
-      panel.style.display = "none";
-      panelBody.innerHTML = "";
-      panelMode = null;
-      if (cm) setTimeout(() => cm.refresh(), 0);
-    }
-    root.querySelector('[data-act="panel-close"]').addEventListener("click", closePanel);
 
-    function runJS() {
-      openPanel("console");
-      panelBody.innerHTML = "";
-      panelBody.className = "ce-panel-body ce-console";
-      const print = (text, cls) => {
-        const line = document.createElement("div");
-        line.className = "ce-console-line" + (cls ? " " + cls : "");
-        line.textContent = text;
-        panelBody.appendChild(line);
-      };
-      const fmt = (a) => a.map(v => {
-        try { return typeof v === "string" ? v : JSON.stringify(v); } catch (e) { return String(v); }
-      }).join(" ");
-      const sandboxConsole = {
-        log: (...a) => print(fmt(a)),
-        info: (...a) => print(fmt(a)),
-        warn: (...a) => print(fmt(a), "ce-warn"),
-        error: (...a) => print(fmt(a), "ce-error"),
-      };
-      try {
-        const fn = new Function("console", getValue());
-        fn(sandboxConsole);
-        if (!panelBody.children.length) print("(ran with no output)", "ce-dim");
-      } catch (e) {
-        print("Uncaught " + e.message, "ce-error");
+    function render() {
+      root.querySelector('[data-act="path"]').value = path;
+      root.querySelectorAll(".fe-sidebar-item").forEach(el => el.classList.toggle("active", el.dataset.path === path));
+      WM.setTitle(winId, path === "/" ? "This PC" : path.split("/").pop());
+
+      const grid = root.querySelector(".fe-grid");
+      const entries = FS.readDir(path);
+      grid.innerHTML = "";
+      deleteBtn.disabled = !selected;
+      if (!entries || entries.length === 0) {
+        grid.innerHTML = `<div class="fe-empty">This folder is empty</div>`;
+        return;
       }
+      entries.forEach(node => {
+        const nodePath = (path === "/" ? "" : path) + "/" + node.name;
+        const item = document.createElement("div");
+        item.className = "fe-item" + (selected === node.name ? " selected" : "");
+        item.dataset.name = node.name;
+        item.innerHTML = `<span class="fi-emoji">${iconFor(node)}</span><span class="fi-label">${node.name}</span>`;
+        item.addEventListener("click", (e) => {
+          e.stopPropagation();
+          setSelection(node.name);
+          root.focus();
+        });
+        item.addEventListener("dblclick", () => {
+          if (node.type === "dir") { navigate(nodePath); }
+          else { CodexApp.open(nodePath); }
+        });
+        item.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setSelection(node.name);
+          ContextMenu.show(e.clientX, e.clientY, [
+            { label: "Open", icon: ICONS.file, action: () => (node.type === "dir" ? navigate(nodePath) : CodexApp.open(nodePath)) },
+            { label: "Rename", icon: ICONS.rename, action: () => renameNode(nodePath, node.name) },
+            "-",
+            { label: "Delete", icon: ICONS.trash, danger: true, action: () => deleteNode(nodePath, node.name) },
+          ]);
+        });
+        grid.appendChild(item);
+      });
     }
 
-    function runHTML() {
-      openPanel("preview");
-      panelBody.className = "ce-panel-body ce-preview";
-      panelBody.innerHTML = "";
-      const iframe = document.createElement("iframe");
-      iframe.className = "ce-preview-frame";
-      iframe.sandbox = "allow-scripts allow-modals";
-      panelBody.appendChild(iframe);
-      iframe.srcdoc = getValue();
+    function navigate(p) {
+      path = FS.normalize(p, path);
+      history.splice(histIdx + 1);
+      history.push(path); histIdx = history.length - 1;
+      render();
     }
 
-    runBtn.addEventListener("click", () => {
-      const ext = currentPath ? extOf(currentPath) : "js";
-      if (ext === "html" || ext === "htm") runHTML();
-      else runJS();
+    root.querySelector('[data-act="back"]').addEventListener("click", () => {
+      if (histIdx > 0) { histIdx--; path = history[histIdx]; render(); }
     });
-
-    // Ctrl/Cmd+S save, Ctrl/Cmd+Enter run
+    root.querySelector('[data-act="up"]').addEventListener("click", () => {
+      if (path !== "/") navigate(path.split("/").slice(0, -1).join("/") || "/");
+    });
+    root.querySelector('[data-act="path"]').addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const p = e.target.value.trim();
+        if (FS.isDir(p)) navigate(p);
+        else render();
+      }
+    });
+    root.querySelector('[data-act="new-folder"]').addEventListener("click", () => {
+      const name = prompt("Folder name:", "New folder");
+      if (name) { FS.mkdir((path === "/" ? "" : path) + "/" + name); render(); }
+    });
+    root.querySelector('[data-act="new-file"]').addEventListener("click", () => {
+      const name = prompt("File name:", "script.js");
+      if (name) { FS.writeFile((path === "/" ? "" : path) + "/" + name, ""); render(); CodexApp.open((path === "/" ? "" : path) + "/" + name); }
+    });
+    deleteBtn.addEventListener("click", () => {
+      if (!selected) return;
+      deleteNode(selectedPath(), selected);
+    });
+    root.querySelectorAll(".fe-sidebar-item").forEach(el => {
+      el.addEventListener("click", () => navigate(el.dataset.path));
+    });
+    root.querySelector(".fe-main").addEventListener("click", (e) => {
+      if (e.target.closest(".fe-item")) return;
+      setSelection(null);
+      root.focus();
+    });
+    root.querySelector(".fe-main").addEventListener("contextmenu", (e) => {
+      if (e.target.closest(".fe-item")) return;
+      e.preventDefault();
+      ContextMenu.show(e.clientX, e.clientY, [
+        { label: "New Folder", icon: ICONS.folder, action: () => { const n = prompt("Folder name:", "New folder"); if (n) { FS.mkdir((path === "/" ? "" : path) + "/" + n); render(); } } },
+        { label: "New File", icon: ICONS.add, action: () => { const n = prompt("File name:", "script.js"); if (n) { FS.writeFile((path === "/" ? "" : path) + "/" + n, ""); render(); CodexApp.open((path === "/" ? "" : path) + "/" + n); } } },
+      ]);
+    });
     root.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+      if ((e.key === "Delete" || e.key === "Backspace") && selected && document.activeElement !== root.querySelector('[data-act="path"]')) {
         e.preventDefault();
-        root.querySelector('[data-act="save"]').click();
-      } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && currentPath && isRunnable(currentPath)) {
-        e.preventDefault();
-        runBtn.click();
+        deleteNode(selectedPath(), selected);
       }
     });
 
-    setTimeout(() => { if (cm) { cm.refresh(); cm.focus(); } else textarea.focus(); }, 60);
+    render();
     return winId;
   }
 
