@@ -191,10 +191,10 @@ html.theme-light .win.focused .win-title-icon{color:var(--accent-2);}
 #taskbar-search{display:none;}
 #taskbar-apps{display:flex;align-items:center;gap:4px;height:100%;padding:0 4px;}
 .taskbar-app{
-  height:42px;min-width:42px;padding:0 12px;border-radius:14px;
-  display:flex;align-items:center;gap:7px;cursor:pointer;
-  background:transparent;position:relative;transition:.15s;color:var(--text);font-size:13px;
-  border:none;
+  height:42px;width:42px;padding:0;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  background:transparent;position:relative;transition:.15s;color:var(--text);
+  border:none;flex:0 0 auto;
 }
 .taskbar-app:hover{background:var(--glass);transform:translateY(-2px);}
 .taskbar-app.active{background:var(--glass-strong);}
@@ -203,8 +203,8 @@ html.theme-light .win.focused .win-title-icon{color:var(--accent-2);}
   width:5px;height:5px;border-radius:50%;background:var(--aurora-teal);
   box-shadow:0 0 6px var(--aurora-teal);
 }
-.taskbar-app .ta-emoji{font-size:17px;}
-.taskbar-app .ta-emoji svg{width:19px;height:19px;display:block;}
+.taskbar-app .ta-emoji{font-size:19px;display:flex;}
+.taskbar-app .ta-emoji svg{width:20px;height:20px;display:block;}
 
 /* clock lives inside the dock, separated by a hairline divider */
 #tray{

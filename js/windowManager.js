@@ -141,8 +141,8 @@ const WM = (() => {
     if (!w) return;
     w.meta.title = title;
     w.el.querySelector(".win-title-text").textContent = title;
-    const tb = document.querySelector(`.taskbar-app[data-id="${id}"] .ta-label`);
-    if (tb) tb.textContent = title;
+    const tb = document.querySelector(`.taskbar-app[data-id="${id}"]`);
+    if (tb) tb.title = title;
   }
 
   function getBody(id) {
@@ -220,7 +220,8 @@ const WM = (() => {
     const btn = document.createElement("button");
     btn.className = "taskbar-app";
     btn.dataset.id = id;
-    btn.innerHTML = `<span class="ta-emoji">${w.meta.icon}</span><span class="ta-label">${w.meta.title}</span>`;
+    btn.title = w.meta.title;
+    btn.innerHTML = `<span class="ta-emoji">${w.meta.icon}</span>`;
     btn.addEventListener("click", () => {
       if (activeId === id && !w.meta.minimized) minimizeWindow(id);
       else focusWindow(id);
