@@ -61,5 +61,7 @@ const ICONS = (() => {
     trash: svg(`<path d="M4.5 7h15"/><path d="M9.5 7V4.8a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V7"/><path d="M6.5 7l.9 12.2a1 1 0 0 0 1 .9h7.2a1 1 0 0 0 1-.9L17.5 7"/><path d="M10.2 11v6"/><path d="M13.8 11v6"/>`),
 
     rename: svg(`<path d="M5 16v3h3l9.5-9.5-3-3z"/><path d="M14.5 6.5l3 3"/><path d="M4 20h16"/>`),
+
+    device: svg(`<rect x="4" y="4.5" width="16" height="11" rx="1.8"/><path d="M9 19.5h6"/><path d="M12 15.5v4"/><rect x="8.5" y="8" width="7" height="4.5" rx="0.6"/>`),
   };
 })();

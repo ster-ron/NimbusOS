@@ -108,6 +108,7 @@ const SettingsApp = (() => {
       <div class="set-nav">
         <div class="set-nav-item" data-s="personalize">${ICONS.palette} Personalize</div>
         <div class="set-nav-item" data-s="system">${ICONS.sliders} System</div>
+        <div class="set-nav-item" data-s="device">${ICONS.device} Device</div>
         <div class="set-nav-item" data-s="about">${ICONS.info} About</div>
       </div>
       <div class="set-main"></div>
@@ -199,6 +200,76 @@ const SettingsApp = (() => {
       });
     }
 
+    function getGPUInfo() {
+      try {
+        const canvas = document.createElement("canvas");
+        const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+        if (!gl) return null;
+        const ext = gl.getExtension("WEBGL_debug_renderer_info");
+        const renderer = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+        return renderer || null;
+      } catch (e) { return null; }
+    }
+
+    function detectBrowser() {
+      const ua = navigator.userAgent;
+      if (ua.includes("Edg/")) return "Microsoft Edge";
+      if (ua.includes("OPR/")) return "Opera";
+      if (ua.includes("Chrome/") && !ua.includes("Edg/")) return "Chrome";
+      if (ua.includes("Firefox/")) return "Firefox";
+      if (ua.includes("Safari/") && !ua.includes("Chrome/")) return "Safari";
+      return "Unknown browser";
+    }
+
+    function detectPlatform() {
+      if (navigator.userAgentData && navigator.userAgentData.platform) return navigator.userAgentData.platform;
+      return navigator.platform || "Unknown";
+    }
+
+    function renderDevice() {
+      const gpu = getGPUInfo();
+      const rows = [
+        { label: "Platform", value: detectPlatform() },
+        { label: "Browser", value: detectBrowser() },
+        { label: "Logical CPU cores", value: navigator.hardwareConcurrency ? String(navigator.hardwareConcurrency) : "Not reported" },
+        { label: "Approx. memory", value: navigator.deviceMemory ? `~${navigator.deviceMemory} GB (rounded, capped by browser)` : "Not reported by this browser" },
+        { label: "GPU renderer", value: gpu || "Not available" },
+        { label: "Screen resolution", value: `${screen.width}×${screen.height} @ ${window.devicePixelRatio}x` },
+        { label: "Language", value: navigator.language || "Unknown" },
+        { label: "Timezone", value: Intl.DateTimeFormat().resolvedOptions().timeZone || "Unknown" },
+        { label: "App storage used", value: "Calculating…" },
+      ];
+
+      main.innerHTML = `
+        <div class="set-section-title">Device</div>
+        <div class="device-note">
+          Browsers don't expose your device's exact model, CPU name, RAM size, or whether you have an
+          SSD or HDD — that's blocked on purpose, across every major browser, to stop websites from
+          fingerprinting your hardware. Below is only what your browser is willing to report, and it's
+          often approximate.
+        </div>
+        <div class="shortcut-list" data-act="device-rows">
+          ${rows.map(r => `<div class="shortcut-row"><span>${r.label}</span><span class="kbd" data-row="${r.label}" title="${String(r.value).replace(/"/g, "&quot;")}">${r.value}</span></div>`).join("")}
+        </div>
+      `;
+
+      if (navigator.storage && navigator.storage.estimate) {
+        navigator.storage.estimate().then(({ usage, quota }) => {
+          const el = main.querySelector('[data-row="App storage used"]');
+          if (!el) return;
+          const usedMB = ((usage || 0) / (1024 * 1024)).toFixed(1);
+          const quotaMB = quota ? (quota / (1024 * 1024)).toFixed(0) : "?";
+          el.textContent = `${usedMB} MB of ~${quotaMB} MB browser quota`;
+        }).catch(() => {
+          const el = main.querySelector('[data-row="App storage used"]');
+          if (el) el.textContent = "Not available";
+        });
+      } else {
+        const el = main.querySelector('[data-row="App storage used"]');
+        if (el) el.textContent = "Not available";
+      }
+    }
+
     function renderAbout() {
       main.innerHTML = `
         <div class="set-section-title">About NimbusOS</div>
@@ -206,7 +277,7 @@ const SettingsApp = (() => {
           <div>${OS_MARK}</div>
           <div>
             <div style="font-weight:700;font-size:15px;color:var(--panel-text);">NimbusOS — Web Edition</div>
-            <div style="font-size:12px;color:var(--panel-text-dim);margin-top:2px;">Version 1.0 · Runs entirely in your browser</div>
+            <div style="font-size:12px;color:var(--panel-text-dim);margin-top:2px;">Version 2.0 · Runs entirely in your browser</div>
           </div>
         </div>
         <div style="margin-top:16px;font-size:12.5px;color:var(--panel-text-dim);line-height:1.7;">
@@ -221,6 +292,7 @@ const SettingsApp = (() => {
       root.querySelectorAll(".set-nav-item").forEach(el => el.classList.toggle("active", el.dataset.s === section));
       if (section === "personalize") renderPersonalize();
       else if (section === "system") renderSystem();
+      else if (section === "device") renderDevice();
       else renderAbout();
     }
 

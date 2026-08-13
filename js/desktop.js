@@ -21,16 +21,6 @@
     ...EXTRA_SHORTCUTS,
   ];
 
-  const DESKTOP_ICONS = [
-    { label: "File Explorer", icon: ICONS.explorer, launch: () => FileExplorerApp.open("/") },
-    { label: "Projects", icon: ICONS.code, launch: () => FileExplorerApp.open("/Projects") },
-    { label: "Terminal", icon: ICONS.terminal, launch: () => TerminalApp.open() },
-    { label: "Nimbus Browser", icon: ICONS.browser, launch: () => BrowserApp.open() },
-    { label: "Music", icon: ICONS.music, launch: () => MusicApp.open() },
-    { label: "Codex", icon: ICONS.code, launch: () => CodexApp.open(null) },
-    { label: "Settings", icon: ICONS.settings, launch: () => SettingsApp.open() },
-  ];
-
   function fmtTime(d) {
     let h = d.getHours(), m = d.getMinutes();
     const ampm = h >= 12 ? "PM" : "AM";
@@ -49,23 +39,6 @@
     const td = document.getElementById("tray-date");
     if (tt) tt.textContent = fmtTime(now);
     if (td) td.textContent = fmtDate(now);
-  }
-
-  function renderDesktopIcons() {
-    const wrap = document.getElementById("desktop-icons");
-    wrap.innerHTML = "";
-    DESKTOP_ICONS.forEach(icon => {
-      const el = document.createElement("div");
-      el.className = "dicon";
-      el.innerHTML = `<span class="di-emoji">${icon.icon}</span><span class="di-label">${icon.label}</span>`;
-      el.addEventListener("click", (e) => {
-        e.stopPropagation();
-        wrap.querySelectorAll(".dicon").forEach(i => i.classList.remove("selected"));
-        el.classList.add("selected");
-      });
-      el.addEventListener("dblclick", () => icon.launch());
-      wrap.appendChild(el);
-    });
   }
 
   function renderStartApps(filter) {
@@ -116,16 +89,6 @@
     });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeStart();
-    });
-  }
-
-  function wireDesktopDeselect() {
-    document.getElementById("desktop").addEventListener("mousedown", (e) => {
-      if (e.target.id === "desktop" || e.target.closest("#desktop-icons") === null) {
-        if (!e.target.closest(".dicon")) {
-          document.querySelectorAll(".dicon.selected").forEach(i => i.classList.remove("selected"));
-        }
-      }
     });
   }
 
@@ -187,9 +150,7 @@
 
   function init() {
     SettingsApp.init();
-    renderDesktopIcons();
     wireStart();
-    wireDesktopDeselect();
     wireContextMenu();
     wireBoot();
     wireGlobalShortcuts();
