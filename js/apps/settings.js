@@ -311,7 +311,7 @@ const SettingsApp = (() => {
           <div>${OS_MARK}</div>
           <div>
             <div style="font-weight:700;font-size:15px;color:var(--panel-text);">NimbusOS — Web Edition</div>
-            <div style="font-size:12px;color:var(--panel-text-dim);margin-top:2px;">Version 1.0 · Runs entirely in your browser</div>
+            <div style="font-size:12px;color:var(--panel-text-dim);margin-top:2px;">Version 2.0 · Runs entirely in your browser</div>
           </div>
         </div>
         <div style="margin-top:16px;font-size:12.5px;color:var(--panel-text-dim);line-height:1.7;">
