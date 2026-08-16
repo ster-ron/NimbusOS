@@ -25,7 +25,8 @@ const CodexApp = (() => {
     return ICONS.file;
   }
 
-  function open(path) {
+  function open(path, opts) {
+    opts = opts || {};
     if (path) {
       const existing = WM.findByAppId("codex:" + path);
       if (existing) { WM.focusWindow(existing.meta.id); return existing.meta.id; }
@@ -311,7 +312,10 @@ const CodexApp = (() => {
       }
     });
 
-    setTimeout(() => { if (cm) { cm.refresh(); cm.focus(); } else textarea.focus(); }, 60);
+    setTimeout(() => {
+      if (cm) { cm.refresh(); cm.focus(); } else textarea.focus();
+      if (opts.autoRun && currentPath && isRunnable(currentPath)) runBtn.click();
+    }, 60);
     return winId;
   }
 

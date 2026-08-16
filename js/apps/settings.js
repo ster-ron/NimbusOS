@@ -109,6 +109,7 @@ const SettingsApp = (() => {
         <div class="set-nav-item" data-s="personalize">${ICONS.palette} Personalize</div>
         <div class="set-nav-item" data-s="system">${ICONS.sliders} System</div>
         <div class="set-nav-item" data-s="device">${ICONS.device} Device</div>
+        <div class="set-nav-item" data-s="connectivity">${ICONS.wifi} Connectivity</div>
         <div class="set-nav-item" data-s="about">${ICONS.info} About</div>
       </div>
       <div class="set-main"></div>
@@ -270,6 +271,39 @@ const SettingsApp = (() => {
       }
     }
 
+    function renderConnectivity() {
+      const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
+
+      function buildRows() {
+        const rows = [
+          { label: "Status", value: navigator.onLine ? "Online" : "Offline" },
+        ];
+        if (conn) {
+          rows.push({ label: "Connection type", value: conn.effectiveType ? conn.effectiveType.toUpperCase() : "Unknown" });
+          rows.push({ label: "Downlink estimate", value: conn.downlink != null ? `~${conn.downlink} Mbps` : "Not reported" });
+          rows.push({ label: "Round-trip time", value: conn.rtt != null ? `~${conn.rtt} ms` : "Not reported" });
+          rows.push({ label: "Data saver", value: conn.saveData ? "On" : "Off" });
+        } else {
+          rows.push({ label: "Connection details", value: "Not supported by this browser" });
+        }
+        return rows;
+      }
+
+      const rows = buildRows();
+      main.innerHTML = `
+        <div class="set-section-title">Connectivity</div>
+        <div class="device-note">
+          Browsers don't expose your Wi-Fi network name, signal strength, IP address, or router details —
+          blocked for the same privacy reasons as device hardware. Connection quality estimates below are
+          only available in Chromium-based browsers (Chrome, Edge) and are rough approximations, not
+          precise measurements.
+        </div>
+        <div class="shortcut-list">
+          ${rows.map(r => `<div class="shortcut-row"><span>${r.label}</span><span class="kbd" title="${String(r.value).replace(/"/g, "&quot;")}">${r.value}</span></div>`).join("")}
+        </div>
+      `;
+    }
+
     function renderAbout() {
       main.innerHTML = `
         <div class="set-section-title">About NimbusOS</div>
@@ -277,7 +311,7 @@ const SettingsApp = (() => {
           <div>${OS_MARK}</div>
           <div>
             <div style="font-weight:700;font-size:15px;color:var(--panel-text);">NimbusOS — Web Edition</div>
-            <div style="font-size:12px;color:var(--panel-text-dim);margin-top:2px;">Version 2.0 · Runs entirely in your browser</div>
+            <div style="font-size:12px;color:var(--panel-text-dim);margin-top:2px;">Version 1.0 · Runs entirely in your browser</div>
           </div>
         </div>
         <div style="margin-top:16px;font-size:12.5px;color:var(--panel-text-dim);line-height:1.7;">
@@ -293,15 +327,28 @@ const SettingsApp = (() => {
       if (section === "personalize") renderPersonalize();
       else if (section === "system") renderSystem();
       else if (section === "device") renderDevice();
+      else if (section === "connectivity") renderConnectivity();
       else renderAbout();
     }
 
     root.querySelectorAll(".set-nav-item").forEach(el => el.addEventListener("click", () => { section = el.dataset.s; renderSection(); }));
     renderSection();
 
+    // live-update the Connectivity panel if it's the visible tab when the network changes
+    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
+    const onConnChange = () => { if (section === "connectivity") renderConnectivity(); };
+    window.addEventListener("online", onConnChange);
+    window.addEventListener("offline", onConnChange);
+    if (conn && conn.addEventListener) conn.addEventListener("change", onConnChange);
+
     return WM.createWindow({
       appId: "settings", title: "Settings", icon: ICONS.settings,
-      width: 640, height: 540, content: root
+      width: 640, height: 540, content: root,
+      onClose: () => {
+        window.removeEventListener("online", onConnChange);
+        window.removeEventListener("offline", onConnChange);
+        if (conn && conn.removeEventListener) conn.removeEventListener("change", onConnChange);
+      }
     });
   }
 

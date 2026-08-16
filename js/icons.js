@@ -63,5 +63,17 @@ const ICONS = (() => {
     rename: svg(`<path d="M5 16v3h3l9.5-9.5-3-3z"/><path d="M14.5 6.5l3 3"/><path d="M4 20h16"/>`),
 
     device: svg(`<rect x="4" y="4.5" width="16" height="11" rx="1.8"/><path d="M9 19.5h6"/><path d="M12 15.5v4"/><rect x="8.5" y="8" width="7" height="4.5" rx="0.6"/>`),
+
+    wifi: svg(`<path d="M3.5 8.8a13 13 0 0 1 17 0"/><path d="M6.6 12.4a8.6 8.6 0 0 1 10.8 0"/><path d="M9.8 16a4 4 0 0 1 4.4 0"/><circle cx="12" cy="19" r="1" fill="currentColor" stroke="none"/>`),
+
+    archive: svg(`<rect x="4" y="4.5" width="16" height="4.5" rx="1"/><path d="M5.5 9v9a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9"/><path d="M10.5 12.5h3"/>`),
+
+    download: svg(`<path d="M12 4v11"/><path d="M7.5 11l4.5 4.5 4.5-4.5"/><path d="M4.5 18.5h15"/>`),
+
+    openWith: svg(`<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M9 9l-3 3 3 3"/><path d="M15 9l3 3-3 3"/>`),
+
+    moveTo: svg(`<path d="M4 7.5a1.5 1.5 0 0 1 1.5-1.5h4l2 2h7a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 18.5 18h-13A1.5 1.5 0 0 1 4 16.5z"/><path d="M9.5 14l3-3-3-3"/><path d="M12.5 11H8"/>`),
+
+    calculator: svg(`<rect x="5" y="3.5" width="14" height="17" rx="2"/><rect x="7.3" y="5.8" width="9.4" height="3.6" rx="0.6"/><circle cx="8.3" cy="13" r="0.9" fill="currentColor" stroke="none"/><circle cx="12" cy="13" r="0.9" fill="currentColor" stroke="none"/><circle cx="15.7" cy="13" r="0.9" fill="currentColor" stroke="none"/><circle cx="8.3" cy="16.6" r="0.9" fill="currentColor" stroke="none"/><circle cx="12" cy="16.6" r="0.9" fill="currentColor" stroke="none"/><circle cx="15.7" cy="16.6" r="0.9" fill="currentColor" stroke="none"/>`),
   };
 })();

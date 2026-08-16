@@ -6,6 +6,7 @@
     { id: "terminal", label: "Terminal", icon: ICONS.terminal, shortcut: "Ctrl+`", launch: () => TerminalApp.open() },
     { id: "browser", label: "Nimbus Browser", icon: ICONS.browser, shortcut: "Ctrl+Alt+B", launch: () => BrowserApp.open() },
     { id: "music", label: "Music", icon: ICONS.music, shortcut: "Ctrl+Alt+M", launch: () => MusicApp.open() },
+    { id: "calculator", label: "Calculator", icon: ICONS.calculator, shortcut: "Ctrl+Alt+K", launch: () => CalculatorApp.open() },
     { id: "settings", label: "Settings", icon: ICONS.settings, shortcut: "Ctrl+,", launch: () => SettingsApp.open() },
   ];
 
@@ -143,6 +144,7 @@
       if (alt && key === "c") { e.preventDefault(); CodexApp.open(null); return; }
       if (alt && key === "b") { e.preventDefault(); BrowserApp.open(); return; }
       if (alt && key === "m") { e.preventDefault(); MusicApp.open(); return; }
+      if (alt && key === "k") { e.preventDefault(); CalculatorApp.open(); return; }
       if (alt && key === "d") { e.preventDefault(); toggleShowDesktop(); return; }
       if (alt && key === "w") { e.preventDefault(); WM.closeFocused(); return; }
     });

@@ -15,10 +15,14 @@ const WM = (() => {
   function createWindow(opts) {
     // opts: {appId, title, icon, width, height, x, y, content(el|html), onClose, onFocus, resizable}
     const id = nextId();
-    const w = opts.width || 640;
-    const h = opts.height || 440;
-    const x = opts.x != null ? opts.x : 80 + (Object.keys(windows).length * 24) % 220;
-    const y = opts.y != null ? opts.y : 60 + (Object.keys(windows).length * 24) % 160;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight - 90; // leave room for the dock
+    const w = Math.min(opts.width || 640, vw - 20);
+    const h = Math.min(opts.height || 440, vh - 20);
+    const defaultX = 80 + (Object.keys(windows).length * 24) % 220;
+    const defaultY = 60 + (Object.keys(windows).length * 24) % 160;
+    const x = Math.max(8, Math.min(opts.x != null ? opts.x : defaultX, vw - w - 8));
+    const y = Math.max(8, Math.min(opts.y != null ? opts.y : defaultY, vh - h - 8));
 
     const el = document.createElement("div");
     el.className = "win";
@@ -69,12 +73,13 @@ const WM = (() => {
       if (e.target.closest(".win-controls")) return;
       toggleMaximize(id);
     });
-    el.addEventListener("mousedown", () => focusWindow(id));
+    el.addEventListener("pointerdown", () => focusWindow(id));
     makeDraggable(el, id);
     if (opts.resizable !== false) makeResizable(el, id);
 
     addTaskbarEntry(id);
     focusWindow(id);
+    if (window.innerWidth < 720 && opts.resizable !== false) toggleMaximize(id);
     return id;
   }
 
@@ -166,21 +171,24 @@ const WM = (() => {
   function makeDraggable(el, id) {
     const handle = el.querySelector(".win-titlebar");
     let sx, sy, ox, oy, dragging = false;
-    handle.addEventListener("mousedown", (e) => {
+    handle.addEventListener("pointerdown", (e) => {
       if (e.target.closest(".win-controls")) return;
       if (windows[id].meta.maximized) return;
       dragging = true;
       sx = e.clientX; sy = e.clientY;
       ox = parseInt(el.style.left); oy = parseInt(el.style.top);
       document.body.style.userSelect = "none";
+      handle.setPointerCapture(e.pointerId);
     });
-    window.addEventListener("mousemove", (e) => {
+    handle.addEventListener("pointermove", (e) => {
       if (!dragging) return;
       const nx = Math.max(-40, ox + (e.clientX - sx));
       const ny = Math.max(0, Math.min(window.innerHeight - 44, oy + (e.clientY - sy)));
       el.style.left = nx + "px"; el.style.top = ny + "px";
     });
-    window.addEventListener("mouseup", () => { dragging = false; document.body.style.userSelect = ""; });
+    const endDrag = () => { dragging = false; document.body.style.userSelect = ""; };
+    handle.addEventListener("pointerup", endDrag);
+    handle.addEventListener("pointercancel", endDrag);
   }
 
   function makeResizable(el, id) {
@@ -188,16 +196,17 @@ const WM = (() => {
       const dirs = [...handle.classList].filter(c => c !== "win-resize");
       const dir = dirs[0];
       let sx, sy, sw, sh, sl, st, active = false;
-      handle.addEventListener("mousedown", (e) => {
+      handle.addEventListener("pointerdown", (e) => {
         e.stopPropagation();
         if (windows[id].meta.maximized) return;
         active = true;
         sx = e.clientX; sy = e.clientY;
         sw = el.offsetWidth; sh = el.offsetHeight;
         sl = parseInt(el.style.left); st = parseInt(el.style.top);
+        handle.setPointerCapture(e.pointerId);
         focusWindow(id);
       });
-      window.addEventListener("mousemove", (e) => {
+      handle.addEventListener("pointermove", (e) => {
         if (!active) return;
         const dx = e.clientX - sx, dy = e.clientY - sy;
         if (dir.includes("e")) el.style.width = Math.max(340, sw + dx) + "px";
@@ -211,7 +220,9 @@ const WM = (() => {
           el.style.height = nh + "px"; el.style.top = (st + (sh - nh)) + "px";
         }
       });
-      window.addEventListener("mouseup", () => active = false);
+      const endResize = () => active = false;
+      handle.addEventListener("pointerup", endResize);
+      handle.addEventListener("pointercancel", endResize);
     });
   }
 
